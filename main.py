@@ -13,7 +13,7 @@ ssid = secrets.WiFi_SSID
 password = secrets.Wifi_Password
 
 
-firmware_url = "https://raw.githubusercontent.com/Problematis/Soil_To_MQTT/"
+firmware_url = "https://raw.githubusercontent.com/Problematis/Soil_To_MQTT/main/"
 ota_updater = OTAUpdater(ssid, password, firmware_url, "main.py")
 ota_updater.download_and_install_update_if_available()
 
