@@ -149,9 +149,9 @@ while True:
     if TimeNow - PublishDelay >= BaselineTimestamp:    # construct JSON MQTT message
         JsonPayload = json.dumps({
             "Time": timestring,
-            "Soil Sensor " +soil_sensor_1_number +" Average": soil_sensor_1_averaged,
-            "Soil Sensor " +soil_sensor_2_number +" Average": soil_sensor_2_averaged,
-            "Soil Sensor " +soil_sensor_3_number +" Average": soil_sensor_3_averaged
+            "Soil_Sensor_" +soil_sensor_1_number +"_Average": soil_sensor_1_averaged,
+            "Soil_Sensor_" +soil_sensor_2_number +"_Average": soil_sensor_2_averaged,
+            "Soil_Sensor_" +soil_sensor_3_number +"_Average": soil_sensor_3_averaged
         })
         print(JsonPayload)
  
