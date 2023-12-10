@@ -23,7 +23,7 @@ mqtt_server = secrets.MQTT_IP_Address
 client_id = Soil_Sensor_Config.mqtt_client_id
 user_t = secrets.MQTT_User
 password_t = secrets.MQTT_Password
-topic_pub = 'Soil'
+topic_pub = Soil_Sensor_Config.mqtt_topic
 
 
 led = Pin("LED", Pin.OUT)
