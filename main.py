@@ -49,7 +49,7 @@ soil_sensor_3_averaged = 0
 
 readDelay = .5 # delay between readings
 
-PublishDelay = 600 # delay (in seconds) between publishing MQTT messages 
+PublishDelay = 60 # delay (in seconds) between publishing MQTT messages 
 
 
 soil_sensor_1 = ADC(Pin(26)) # Soil moisture PIN reference
