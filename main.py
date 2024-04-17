@@ -4,6 +4,7 @@ import network
 import secrets
 import Soil_Sensor_Config
 import json
+import statistics
 from machine import ADC, Pin, I2C
 from umqtt.simple import MQTTClient
 
@@ -37,20 +38,17 @@ Window_Size = 20
 
 soil_sensor_1_readings = [0 for i in range(Window_Size)]
 soil_sensor_1_sum = 0
-soil_sensor_1_averaged = 0
+soil_sensor_1_median = 0
 
 soil_sensor_2_readings = [0 for i in range(Window_Size)]
 soil_sensor_2_sum = 0
-soil_sensor_2_averaged = 0
+soil_sensor_2_median = 0
 
 soil_sensor_3_readings = [0 for i in range(Window_Size)]
 soil_sensor_3_sum = 0
-soil_sensor_3_averaged = 0
+soil_sensor_3_median = 0
 
-readDelay = .5 # delay between readings
-
-PublishDelay = 60 # delay (in seconds) between publishing MQTT messages 
-
+readDelay = 30 # delay between readings
 
 soil_sensor_1 = ADC(Pin(26)) # Soil moisture PIN reference
 soil_sensor_2 = ADC(Pin(27)) # Soil moisture PIN reference
@@ -60,6 +58,9 @@ soil_sensor_1_number = Soil_Sensor_Config.Soil_Sensor_1  # actual label on the s
 soil_sensor_2_number = Soil_Sensor_Config.Soil_Sensor_2  # actual label on the soil sensor
 soil_sensor_3_number = Soil_Sensor_Config.Soil_Sensor_3  # actual label on the soil sensor
 
+soil_sensor_1_readings = []
+soil_sensor_2_readings = []
+soil_sensor_3_readings = []
 
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
@@ -112,62 +113,56 @@ def mqtt_disconnect():
 ntptime.settime()
 
 rtc=machine.RTC()
- 
-# create a baseline timestamp minus the publishing interval
-BaselineTimestamp = utime.time()  
     
 while True:
     
 # capture Sensor data     
-    soil_sensor_1_sum = soil_sensor_1_sum - soil_sensor_1_readings[Index]
-    soil_sensor_2_sum = soil_sensor_2_sum - soil_sensor_1_readings[Index]
-    soil_sensor_3_sum = soil_sensor_3_sum - soil_sensor_1_readings[Index]
-       
-    Value = soil_sensor_1.read_u16()
-    soil_sensor_1_readings[Index] = Value
-    soil_sensor_1_sum = soil_sensor_1_sum + Value
-   
-    Value = soil_sensor_2.read_u16()
-    soil_sensor_2_readings[Index] = Value
-    soil_sensor_2_sum = soil_sensor_1_sum + Value  
-  
-    Value = soil_sensor_3.read_u16()
-    soil_sensor_3_readings[Index] = Value
-    soil_sensor_3_sum = soil_sensor_1_sum + Value  
-     
-    Index = (Index + 1) % Window_Size
-    soil_sensor_1_averaged = soil_sensor_1_sum / Window_Size
-    soil_sensor_2_averaged = soil_sensor_2_sum / Window_Size
-    soil_sensor_3_averaged = soil_sensor_3_sum / Window_Size
-
+    for i in range(Window_Size):
+        reading = soil_sensor_1.read_u16()
+        soil_sensor_1_readings.append(reading)
+        print(soil_sensor_1_readings)
+        
+        reading = soil_sensor_2.read_u16()
+        soil_sensor_2_readings.append(reading)
+        print(soil_sensor_2_readings)
+        
+        reading = soil_sensor_3.read_u16()
+        soil_sensor_3_readings.append(reading)
+        print(soil_sensor_3_readings)        
+        
+        utime.sleep(readDelay)
+           
+    soil_sensor_1_median = statistics.median(soil_sensor_1_readings)
+    print(soil_sensor_1_median)
+    soil_sensor_1_readings = []
+    
+    soil_sensor_2_median = statistics.median(soil_sensor_2_readings)
+    print(soil_sensor_2_median)
+    soil_sensor_2_readings = []
+    
+    soil_sensor_3_median = statistics.median(soil_sensor_3_readings)
+    print(soil_sensor_3_median)
+    soil_sensor_3_readings = []    
+      
     timestamp=rtc.datetime()
     timestring="%04d-%02d-%02d %02d:%02d:%02d"%(timestamp[0:3] +
                                                 timestamp[4:7])
-# if it is more than 10 minutes since the last published timestamp then
-    TimeNow = utime.time()
-    
-    if TimeNow - PublishDelay >= BaselineTimestamp:    # construct JSON MQTT message
-        JsonPayload = json.dumps({
-            "Time": timestring,
-            "Soil_Sensor_" +soil_sensor_1_number +"_Average": soil_sensor_1_averaged,
-            "Soil_Sensor_" +soil_sensor_2_number +"_Average": soil_sensor_2_averaged,
-            "Soil_Sensor_" +soil_sensor_3_number +"_Average": soil_sensor_3_averaged
-        })
-        print(JsonPayload)
+ # construct JSON MQTT message
+    JsonPayload = json.dumps({
+        "Time": timestring,
+        "Soil_Sensor_" +soil_sensor_1_number +"_Median": soil_sensor_1_median,
+        "Soil_Sensor_" +soil_sensor_2_number +"_Median": soil_sensor_2_median,
+        "Soil_Sensor_" +soil_sensor_3_number +"_Median": soil_sensor_3_median
+    })
+    print(JsonPayload)
  
-        try:
-            client = mqtt_connect()
-        except:
-            print('Failed to connect to the MQTT Broker.')
+    try:
+        client = mqtt_connect()
+    except:
+        print('Failed to connect to the MQTT Broker.')
     
-        try:
-            mqtt_publish()
-        except:
-            print('Failed to publish to the MQTT Broker.')
+    try:
+        mqtt_publish()
+    except:
+        print('Failed to publish to the MQTT Broker.')
 
-                
-        BaselineTimestamp = TimeNow # update BaselineTimestamp
-
-
-
-    utime.sleep(readDelay) # set a delay between readings
