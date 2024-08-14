@@ -1,6 +1,6 @@
 import utime
-import ntptime
 import network
+import urequests
 import secrets
 import Soil_Sensor_Config
 import json
@@ -13,6 +13,7 @@ from ota import OTAUpdater
 ssid = secrets.WiFi_SSID
 password = secrets.Wifi_Password
 
+url = "http://worldtimeapi.org/api/timezone/Europe/London" # see http://worldtimeapi.org/timezones - Europe/London
 
 firmware_url = "https://raw.githubusercontent.com/Problematis/Soil_To_MQTT/main/"
 ota_updater = OTAUpdater(ssid, password, firmware_url, "main.py")
@@ -110,7 +111,7 @@ def mqtt_disconnect():
     client.disconnect()        
     print('Disconnected from %s MQTT Broker'%(mqtt_server))
 
-ntptime.settime()
+# ntptime.settime()
 
 rtc=machine.RTC()
     
@@ -143,7 +144,25 @@ while True:
     soil_sensor_3_median = statistics.median(soil_sensor_3_readings)
     print(soil_sensor_3_median)
     soil_sensor_3_readings = []    
-      
+    
+    response = urequests.get(url)
+    print("JSON response:\n", response.text)
+            
+    # parse JSON
+    parsed = response.json()
+    datetime_str = str(parsed["datetime"])
+    year = int(datetime_str[0:4])
+    month = int(datetime_str[5:7])
+    day = int(datetime_str[8:10])
+    hour = int(datetime_str[11:13])
+    minute = int(datetime_str[14:16])
+    second = int(datetime_str[17:19])
+    subsecond = int(round(int(datetime_str[20:26]) / 10000))
+    
+    rtc.datetime((year, month, day, 0, hour, minute, second, subsecond))
+    
+    print("RTC updated\n")
+   
     timestamp=rtc.datetime()
     timestring="%04d-%02d-%02d %02d:%02d:%02d"%(timestamp[0:3] +
                                                 timestamp[4:7])
@@ -165,4 +184,5 @@ while True:
         mqtt_publish()
     except:
         print('Failed to publish to the MQTT Broker.')
+
 
