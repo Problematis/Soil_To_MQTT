@@ -114,6 +114,25 @@ def mqtt_disconnect():
 # ntptime.settime()
 
 rtc=machine.RTC()
+
+
+response = urequests.get(url)
+if response.status_code == 200:
+    print("JSON response:\n", response.text)
+        # parse JSON
+    parsed = response.json()
+    datetime_str = str(parsed["datetime"])
+    year = int(datetime_str[0:4])
+    month = int(datetime_str[5:7])
+    day = int(datetime_str[8:10])
+    hour = int(datetime_str[11:13])
+    minute = int(datetime_str[14:16])
+    second = int(datetime_str[17:19])
+    subsecond = int(round(int(datetime_str[20:26]) / 10000))
+    rtc.datetime((year, month, day, 0, hour, minute, second, subsecond))
+    print("RTC updated\n")
+else:        
+    print("unable to retrive World Time")
     
 while True:
     
@@ -144,25 +163,7 @@ while True:
     soil_sensor_3_median = statistics.median(soil_sensor_3_readings)
     print(soil_sensor_3_median)
     soil_sensor_3_readings = []    
-    
-    response = urequests.get(url)
-    print("JSON response:\n", response.text)
-            
-    # parse JSON
-    parsed = response.json()
-    datetime_str = str(parsed["datetime"])
-    year = int(datetime_str[0:4])
-    month = int(datetime_str[5:7])
-    day = int(datetime_str[8:10])
-    hour = int(datetime_str[11:13])
-    minute = int(datetime_str[14:16])
-    second = int(datetime_str[17:19])
-    subsecond = int(round(int(datetime_str[20:26]) / 10000))
-    
-    rtc.datetime((year, month, day, 0, hour, minute, second, subsecond))
-    
-    print("RTC updated\n")
-   
+       
     timestamp=rtc.datetime()
     timestring="%04d-%02d-%02d %02d:%02d:%02d"%(timestamp[0:3] +
                                                 timestamp[4:7])
