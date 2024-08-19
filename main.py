@@ -15,7 +15,7 @@ password = secrets.Wifi_Password
 
 url = "http://worldtimeapi.org/api/timezone/Europe/London" # see http://worldtimeapi.org/timezones - Europe/London
 
-firmware_url = "https://raw.githubusercontent.com/Problematis/Soil_To_MQTT/main/"
+firmware_url = "https://raw.githubusercontent.com/Problematis/Soil_To_MQTT/"
 ota_updater = OTAUpdater(ssid, password, firmware_url, "main.py")
 ota_updater.download_and_install_update_if_available()
 
